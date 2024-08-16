@@ -129,7 +129,8 @@
 
             // Collect answers from inputs
             while (document.getElementById(`answer-${index}`)) {
-                answers.push(document.getElementById(`answer-${index}`).value);
+                txt = document.getElementById(`answer-${index}`).value
+                answers.push(txt);
                 index++;
             }
 
@@ -139,7 +140,7 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ text: answers.join('\n') }),
+                body: JSON.stringify({ text: answers }),
             });
 
             const data = await response.json();
