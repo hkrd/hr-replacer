@@ -10,7 +10,10 @@ from openai import OpenAI
 
 client = OpenAI()
 
-app = FastAPI()
+app = FastAPI(
+    docs_url=None,  # Disable Swagger UI
+    redoc_url=None,  # Disable ReDoc
+)
 
 app.add_middleware(SessionMiddleware, secret_key=os.environ.get('SESSION_SECRET_KEY'))
 
