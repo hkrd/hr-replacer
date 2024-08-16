@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+        select, button {
+            margin: 10px 0;
+        }
+        .question-container {
+            margin-top: 20px;
+        }
+        .question {
+            margin-bottom: 10px;
+        }
+        .question label {
+            display: block;
+            font-weight: bold;
+        }
+        .question input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        .results {
+            margin-top: 20px;
+        }
+        .results label {
+            font-weight: bold;
+        }
+        textarea {
+            box-sizing: border-box;
+            resize: vertical; /* Allows vertical resizing only */
+            min-height: 100px; /* Minimum height of the textarea */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>HR Replacer</h1>
+        <form id="language-form">
+            <label for="language">Choose a topic:</label>
+            <select id="language" name="language">
+                <option value="">Select...</option>
+                <option value="Python">Python</option>
+                <option value="Java">Java</option>
+                <option value="JavaScript">JavaScript</option>
+                <option value="TypeScript">TypeScript</option>
+                <option value="C#">C#</option>
+                <option value="Kotlin">Kotlin</option>
+                <option value="Go">Go</option>
+                <option value="Rust">Rust</option>
+                <option value="PHP">PHP</option>
+                <option value="Swift">Swift</option>
+                <option value="Scala">Scala</option>
+                <option value="C++">C++</option>
+                <option value="SQL">SQL</option>
+                <option value="Databases">Databases</option>
+                <option value="MultithreadingAsync">Multithreading and Async</option>
+            </select>
+            <button type="button" onclick="generateQuestions()">Get Questions</button>
+        </form>
+
+        <div class="question-container" id="question-container"></div>
+
+        <div class="results" id="results" style="display: none;">
+            <h2>Evaluation Results</h2>
+            <div id="evaluation-results"></div>
+        </div>
+    </div>
+
+    <script>
+        async function generateQuestions() {
+            const language = document.getElementById('language').value;
+            if (!language) {
+                alert('Please select a topic.');
+                return;
+            }
+
+            // Fetch questions from the backend
+            const response = await fetch('/api/questions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text: language }),
+            });
+
+            const data = await response.json();
+            const questions = data.generated_questions;
+
+            // Populate questions in the HTML
+            const questionContainer = document.getElementById('question-container');
+            questionContainer.innerHTML = '';
+            questions.forEach((question, index) => {
+                const questionHtml = `
+                    <div class="question">
+                        <label for="answer-${index}">${question}</label>
+                        <textarea id="answer-${index}" name="answer-${index}" rows="4" cols="100"></textarea>
+                    </div>
+                `;
+                questionContainer.innerHTML += questionHtml;
+            });
+
+            // Show submit button for evaluation
+            questionContainer.innerHTML += `
+                <button id="submit-button" type="button" onclick="evaluateAnswers()">Submit Answers</button>
+            `;
+
+            // Hide results container initially
+            document.getElementById('results').style.display = 'none';
+        }
+
+        async function evaluateAnswers() {
+            const submitButton = document.getElementById('submit-button');
+            submitButton.disabled = true;
+            const questionContainer = document.getElementById('question-container');
+            const answers = [];
+            let index = 0;
+
+            // Collect answers from inputs
+            while (document.getElementById(`answer-${index}`)) {
+                answers.push(document.getElementById(`answer-${index}`).value);
+                index++;
+            }
+
+            // Fetch evaluation from the backend
+            const response = await fetch('/api/evaluation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text: answers.join('\n') }),
+            });
+
+            const data = await response.json();
+            const { score, msg } = data;
+
+            // Populate evaluation results in the HTML
+            
+            const evaluationResultsContainer = document.getElementById('evaluation-results');
+            evaluationResultsContainer.innerHTML = '';
+
+            // Create a score element
+            const resultScore = document.createElement('div');
+            resultScore.className = 'result-score';
+            resultScore.style.fontSize = '1.5em';
+            resultScore.style.fontWeight = 'bold'
+            resultScore.textContent = `Score: ${score}`;
+            
+            // Create a message element
+            const resultMsg = document.createElement('div');
+            resultMsg.className = 'result-msg';
+            resultMsg.style.fontSize = '2em'; // Larger font size
+            resultMsg.style.fontWeight = 'bold'
+            resultMsg.textContent = msg;
+
+            // Apply color based on score to the message
+            if (score < 30) {
+                resultMsg.style.color = 'red'; // Red for scores less than 32
+            } else {
+                resultMsg.style.color = 'green'; // Green for scores 32 or above
+            }
+
+            // Append score and message to the results container
+            evaluationResultsContainer.appendChild(resultScore);
+            evaluationResultsContainer.appendChild(resultMsg);
+
+            // Show results container
+            document.getElementById('results').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
